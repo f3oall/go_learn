@@ -22,8 +22,13 @@ type Client struct {
 	OrdersAmount int //Client structure
 }
 
-type ClientSlc []Client //The same reason, needed for creating methods.
+type ClientSlc []Client
 
+var allClients ClientSlc
+
+func init() {
+	allClients = initializeClients()
+}
 func (clients *ClientSlc) Remove(item int) {
 	slice := *clients
 	slice = append(slice[:item], slice[item+1:]...)

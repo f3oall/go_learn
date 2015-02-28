@@ -16,8 +16,13 @@ type Order struct { //Order structure, field Items is a slices of structure Good
 	Bill     int
 	Date     time.Time
 }
-type OrderSlc []Order // It is needed for  methods, without it methods don't work(Error with same names), i don't understand why.
+type OrderSlc []Order
 
+var allOrders OrderSlc
+
+func init() {
+	allOrders = initializeOrders()
+}
 func (orders *OrderSlc) Remove(item int) { //This method removes record from orders slice.
 	slice := *orders
 	slice = append(slice[:item], slice[item+1:]...)
@@ -59,23 +64,23 @@ func initializeOrders() OrderSlc { //Initialize empty slice of Order structures 
 	}
 	return orders
 }
-func (orders *OrderSlc) Add(clients ClientSlc, goods GoodSlc) { //Add new record to orders.
+func (orders *OrderSlc) Add() { //Add new record to orders.
 	var new Order
 	fmt.Println("Order adding.\n\n")
 	fmt.Println("Choose customer:\n")
-	for arrayID, client := range clients {
+	for arrayID, client := range allClients {
 		fmt.Printf("%d.%s\n", arrayID+1, client.Name)
 	}
-	ID := scan(len(clients))
-	new.Customer = clients[ID-1].Name
+	ID := scan(len(allClients))
+	new.Customer = allClients[ID-1].Name
 	choice := 1
 	for choice != 2 {
 		fmt.Println("Choose goods:\n")
-		for arrayID, good := range goods {
+		for arrayID, good := range allGoods {
 			fmt.Printf("%d.%s %d$ %dpc\n", arrayID+1, good.Name, good.Price, good.Amount)
 		}
-		ID := scan(len(goods))
-		new.Items = append(new.Items, goods[ID-1])
+		ID := scan(len(allGoods))
+		new.Items = append(new.Items, allGoods[ID-1])
 		fmt.Println("Woud you like to add another one good?\n1.Yes.\n2.No")
 		fmt.Scanf("%d", &choice)
 		fflushStdin()
@@ -86,6 +91,7 @@ func (orders *OrderSlc) Add(clients ClientSlc, goods GoodSlc) { //Add new record
 	new.Date = time.Now()
 	fmt.Println("Adding succesfully.\n")
 }
+func (orders *OrderSlc) Edit()     {}
 func (orders *OrderSlc) Delete() { //Delete record from slice, Remove() method is used there.
 	fmt.Println("Order deleting.\n\n")
 	fmt.Println("Please choose required order:\n")

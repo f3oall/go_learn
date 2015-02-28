@@ -15,8 +15,13 @@ type Good struct { //Good structure.
 	Price  int
 	Amount int
 }
-type GoodSlc []Good //It is needed for  methods, without it methods don't work(Error with same names), i don't understand why.
+type GoodSlc []Good
 
+var allGoods GoodSlc
+
+func init() {
+	allGoods = initializeGoods()
+}
 func (goods *GoodSlc) Remove(item int) { //This method removes record from goods slice.
 	slice := *goods
 	slice = append(slice[:item], slice[item+1:]...)
@@ -111,7 +116,7 @@ func (goods GoodSlc) Edit() { //Method for editing data.
 				return
 			}
 			fflushStdin()
-			fmt.Printf("Good number %s has been eddited.", good.Number)
+			fmt.Printf("Good number %d has been eddited.", good.Number)
 			break
 		}
 	}
