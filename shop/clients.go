@@ -2,13 +2,12 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 )
 
+//Client structure
 type Client struct {
 	Name         string
 	Surname      string
@@ -19,214 +18,116 @@ type Client struct {
 	City         string
 	State        string
 	Zip          string
-	OrdersAmount int //Client structure
+	OrdersAmount int
 }
 
-type ClientSlc []Client
+//Clients variable is a slice of Client structures
+type Clients []Client
 
-var allClients ClientSlc
+var allCls Clients
 
 func init() {
-	allClients = initializeClients()
+	allCls = initCls()
 }
-func (clients *ClientSlc) Remove(item int) {
-	slice := *clients
-	slice = append(slice[:item], slice[item+1:]...)
-	*clients = slice //Method for remove record from slice.
-}
-func (clients ClientSlc) Save() {
-	file, err := os.OpenFile("clients.json", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println("Error: %v! File 'clients.json' can't be opened!\n", err)
-		os.Exit(1)
-	}
-	defer file.Close()
 
-	encoder := json.NewEncoder(file)
-	for _, client := range clients {
-		err = encoder.Encode(client)
-		if err != nil {
-			fmt.Println("Error: %v! File 'clients.json' can't be written!\n", err)
-		}
-	} //Save client data.
-}
-func initializeClients() ClientSlc {
-	var clients ClientSlc
-	file, err := os.OpenFile("clients.json", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println("Error: %v! File 'clients.json' can't be opened!\n", err)
-		os.Exit(1)
-	}
-	defer file.Close()
+//Read from file into the allCls slice
+func initCls() Clients {
+	var cls Clients
+	file := OpenFile("clients.json")
 	decoder := json.NewDecoder(file)
-	var client Client
-	for ; err != io.EOF; clients = append(clients, client) {
-		err = decoder.Decode(&client)
-		if err != nil && err != io.EOF {
-			fmt.Println("Error: %v! File 'clients.json' can't be read!\n", err)
-			os.Exit(1)
-		}
+	err := decoder.Decode(&cls)
+	if err != nil && err != io.EOF {
+		fmt.Printf("Error: %v! File 'clients.json' can't be read!\r\n", err)
 	}
-	return clients //Initialize clients data.
-}
-func (clients *ClientSlc) Add() {
-	clearConsole()
-	stdin := bufio.NewReader(os.Stdin)
-	var new Client
-	fmt.Println("Client adding.\n\n")
-	fmt.Println("Enter name:")
-	fmt.Scanf("%s", &new.Name)
-	stdin.ReadString('\n')
-	fmt.Println("Enter surname:")
-	fmt.Scanf("%s", &new.Surname)
-	stdin.ReadString('\n')
-	fmt.Println("Enter login:")
-	fmt.Scanf("%s", &new.Login)
-	stdin.ReadString('\n')
-	fmt.Println("Enter password:")
-	fmt.Scanf("%s", &new.Password)
-	stdin.ReadString('\n')
-	fmt.Println("Enter credit card:")
-	fmt.Scanf("%s", &new.CreditCard)
-	stdin.ReadString('\n')
-	fmt.Println("Enter street:")
-	fmt.Scanf("%s", &new.Street)
-	stdin.ReadString('\n')
-	fmt.Println("Enter city:")
-	fmt.Scanf("%s", &new.City)
-	stdin.ReadString('\n')
-	fmt.Println("Enter state:")
-	fmt.Scanf("%s", &new.State)
-	stdin.ReadString('\n')
-	fmt.Println("Enter ZIP:")
-	fmt.Scanf("%s", &new.Zip)
-	stdin.ReadString('\n')
-	new.OrdersAmount = 0
-	/*slice := *clients
-	  slice = append(slice, new)
-	  *clients = slice*/
-	*clients = append(*clients, new)
-	fmt.Println("Adding succesfully.\n") //Add new record.
-}
-func (clients ClientSlc) Edit() {
-	clearConsole()
-	var name string
-	fmt.Println("Client editting.\n\n")
-	fmt.Println("Please select required client by name:")
-	fmt.Scanf("%s", &name)
-	fflushStdin()
-	for ID, client := range clients {
-		if client.Name == name {
-			fmt.Println("1.Name: ", client.Name, "\n")
-			fmt.Println("2.Surame:", client.Surname, "\n")
-			fmt.Println("3.Login:", client.Login, "\n")
-			fmt.Println("4.Password:", client.Password, "\n")
-			fmt.Println("5.Credit card: ", client.CreditCard, "\n")
-			fmt.Println("6.Street:", client.Street, "\n")
-			fmt.Println("7.City:", client.City, "\n")
-			fmt.Println("8.State:", client.State, "\n")
-			fmt.Println("9.ZIP:", client.Zip, "\n")
-			fmt.Println("10.Return to main menu.\n\n")
-			choice := scan(10)
-			switch choice {
-			case 1:
-				fmt.Println("Enter name:")
-				fmt.Scanf("%s", &client.Name)
-				break
-			case 2:
-				fmt.Println("Enter surname:")
-				fmt.Scanf("%s", &client.Surname)
-				break
-			case 3:
-				fmt.Println("Enter login:")
-				fmt.Scanf("%s", &client.Login)
-				break
-			case 4:
-				fmt.Println("Enter password:")
-				fmt.Scanf("%s", &client.Password)
-				break
-			case 5:
-				fmt.Println("Enter credit card:")
-				fmt.Scanf("%s", &client.CreditCard)
-				break
-			case 6:
-				fmt.Println("Enter street:")
-				fmt.Scanf("%s", &client.Street)
-				break
-			case 7:
-				fmt.Println("Enter city:")
-				fmt.Scanf("%s", &client.City)
-				break
-			case 8:
-				fmt.Println("Enter state:")
-				fmt.Scanf("%s", &client.State)
-				break
-			case 9:
-				fmt.Println("Enter ZIP:")
-				fmt.Scanf("%s", &client.Zip)
-				break
-			case 10:
-				return
-			}
-			clients[ID] = client
-			fflushStdin()
-			fmt.Println("Client %d has been eddited.")
-			return
-		}
-	}
-	fmt.Println("No such client!\n1.Try again.\n2.Return to main menu.")
-	choice := scan(2)
-	switch choice {
-	case 1:
-		clients.Edit()
-		break
-	case 2:
-		return
-	} //Edit record.
-}
-func (clients *ClientSlc) Delete() {
-	clearConsole()
-	var name string
-	fmt.Println("Client deleting.\n\n")
-	fmt.Println("Please select required client by name:")
-	fmt.Scanf("%s", &name)
-	fflushStdin()
-	for arrayID, client := range *clients {
-		if client.Name == name {
-			clients.Remove(arrayID)
-			fmt.Println("Client has been deleted")
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-			return
-		}
-	}
-	fmt.Println("No such client!\n1.Try again.\n2.Return to main menu.")
-	choice := scan(2)
-	switch choice {
-	case 1:
-		clients.Delete()
-		break
-	case 2:
-		return
-	} //Delete record.
+	file.Close()
+	return cls
 }
 
-func (clients ClientSlc) Show() {
-	clearConsole()
-	fmt.Println("List of Clients.\n\n")
-	fmt.Println("____________________________________________\n")
-	for arrayID, client := range clients {
-		fmt.Println("ID:", arrayID, "\n")
-		fmt.Println("Name: ", client.Name, "\n")
-		fmt.Println("Surame:", client.Surname, "\n")
-		fmt.Println("Login:", client.Login, "\n")
-		fmt.Println("Password:", client.Password, "\n")
-		fmt.Println("Credit card: ", client.CreditCard, "\n")
-		fmt.Println("Street:", client.Street, "\n")
-		fmt.Println("City:", client.City, "\n")
-		fmt.Println("State:", client.State, "\n")
-		fmt.Println("ZIP:", client.Zip, "\n")
-		fmt.Println("____________________________________________n")
+//GetNewItem returns empty object of Client structure
+func (cls *Clients) GetNewItem() Item {
+	return Client{}
+}
+
+//GetItem returns requsted by id object from allCls slice
+func (cls Clients) GetItem(id int) Item {
+	return cls[id]
+}
+
+//GetName returns string "client"
+func (cls *Clients) GetName() string {
+	return "client"
+}
+
+//Ask returns map with string keys and interface values, where values pass to fmt.Fscanf function and keys are questions which print for user.
+func (cls *Clients) Ask(i Item) map[string]interface{} {
+	c := i.(Client)
+	questions := map[string]interface{}{
+		"Enter name:":        &c.Name,
+		"Enter surname:":     &c.Surname,
+		"Enter login:":       &c.Login,
+		"Enter password:":    &c.Password,
+		"Enter street:":      &c.Street,
+		"Enter city:":        &c.City,
+		"Enter state:":       &c.State,
+		"Enter credit card:": &c.CreditCard,
+		"Enter ZIP:":         &c.Zip,
 	}
-	fmt.Printf("There are %d records in table.\n", len(clients))
-	bufio.NewReader(os.Stdin).ReadBytes('\n') //Show list of clients.
+	return questions
+}
+
+//Show returns string which contains data of one client.
+func (c Client) Show() string {
+	s := "\r\nName: " + c.Name + "\r\nSurname: " + c.Surname + "\r\nLogin: " + c.Login
+	s = s + "\r\nPassword: " + c.Password + "\r\nCredit card: " + c.CreditCard
+	s = s + "\r\nStreet: " + c.Street + "\r\nCity: " + c.City + "\r\nState: " + c.State + "\r\nZip: " + c.Zip
+	return s
+}
+
+//FindByName returns integer value which equal to requsted by name client id.
+func (cls Clients) FindByName(name string) int {
+	for n, c := range cls {
+		if c.Name == name {
+			return n
+		}
+	}
+	return -1
+}
+
+//Save data to file
+func (cls Clients) Save() {
+	file := OpenFile("clients.json")
+	encoder := json.NewEncoder(file)
+	err := encoder.Encode(cls)
+	if err != nil {
+		fmt.Printf("Error: %v! File 'clients.json' can't be written!\r\n", err)
+	}
+	file.Close()
+}
+
+//Append required Item to allCls
+func (cls *Clients) Append(i Item) {
+	c := i.(Client)
+	*cls = append(*cls, c)
+}
+
+//Edit required Item and replaces the old value to the new
+func (cls Clients) Edit(id int, i Item) {
+	c := i.(Client)
+	cls[id] = c
+}
+
+//Remove required object from slice
+func (cls *Clients) Remove(id int) {
+	slice := *cls
+	slice = append(slice[:id], slice[id+1:]...)
+	*cls = slice
+}
+
+//List returns string which contains data of allCls slice.
+func (cls Clients) List() string {
+	s := "List of Clients.\r\n\r\n"
+	for _, c := range cls {
+		s = s + c.Show() + "____________________________________________\r\n"
+	}
+	return s
 }

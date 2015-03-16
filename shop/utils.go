@@ -4,29 +4,42 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 )
 
-func scan(max int) int { //Function for simple input.Parameter 'max' is maximum value,that user can enter in console.
-
-	var choice int
-	fmt.Println("Enter number of required action:")
-	fmt.Scanf("%d", &choice)
-	fflushStdin()
-	if (choice < 1) || (choice > max) {
-		fmt.Println("No such action!Try again please.\n")
-		return scan(max)
-	} else {
-		return choice
+//OpenFile .
+func OpenFile(filename string) *os.File {
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Printf("Error: %v! File '%s' can't be opened!\r\n", err, filename)
+		os.Exit(1)
 	}
+	return file
 }
-func clearConsole() { //Clear console from text.
+
+//scan returns integer value which can be from 1 to max
+func scan(max int, conn net.Conn, bufc *bufio.Reader) int {
+	var choice int
+	fmt.Fprintf(conn, "Enter number of required action:")
+	fmt.Fscanf(bufc, "%d", &choice)
+	fflushStdin(bufc)
+	if (int(choice) < 1) || (int(choice) > max) {
+		fmt.Fprintf(conn, "No such action!Try again please.\r\n")
+		return scan(max, conn, bufc)
+	}
+	return choice
+}
+
+//clearConsole
+func clearConsole() {
 	cmd := exec.Command("cmd", "/c", "cls")
 	cmd.Stdout = os.Stdout
 	cmd.Run()
 }
-func fflushStdin() { //Clear input stream from character '\n'.Used after fmt.Scanf().
-	stdin := bufio.NewReader(os.Stdin)
-	stdin.ReadString('\n')
+
+//fflushStdin clears bufer.
+func fflushStdin(bufc *bufio.Reader) {
+	bufc.ReadString('\n')
 }

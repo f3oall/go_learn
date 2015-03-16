@@ -2,117 +2,140 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"time"
 )
 
-type Order struct { //Order structure, field Items is a slices of structure Good(Type GoodSlc was defined in Goods.go)
-	Customer string
-	Items    GoodSlc
-	Bill     int
-	Date     time.Time
+//Order structure
+type Order struct {
+	Customer    string
+	Items       Products
+	Bill        string
+	ItemsAmount int
 }
-type OrderSlc []Order
 
-var allOrders OrderSlc
+//Orders variable is the slice of Order structures
+type Orders []Order
+
+var allOrds Orders
 
 func init() {
-	allOrders = initializeOrders()
-}
-func (orders *OrderSlc) Remove(item int) { //This method removes record from orders slice.
-	slice := *orders
-	slice = append(slice[:item], slice[item+1:]...)
-	*orders = slice
+	allOrds = initOrds()
 }
 
-func (orders OrderSlc) Save() { //Save data in file(Only for orders)
-	//for orders
-	file, err := os.OpenFile("orders.json", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println("Error: %v! File 'orders.json' can't be opened!\n", err)
-	}
-	defer file.Close()
-	encoder := json.NewEncoder(file)
-	for _, order := range orders {
-		err = encoder.Encode(order)
-		if err != nil {
-			fmt.Println("Error: %v! File 'orders.json' can't be written!\n", err)
-		}
-	}
-}
-
-func initializeOrders() OrderSlc { //Initialize empty slice of Order structures and read data from file in it.
-	var orders OrderSlc
-	file, err := os.OpenFile("orders.json", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println("Error: %v! File 'orders.json' can't be opened!\n", err)
+//Read from file into the allOrds slice
+func initOrds() Orders {
+	var ords Orders
+	file := OpenFile("orders.json")
+	decoder := json.NewDecoder(file)
+	err := decoder.Decode(&ords)
+	if err != nil && err != io.EOF {
+		fmt.Printf("Error: %v! File 'orders.json' can't be read!\r\n", err)
 		os.Exit(1)
 	}
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	var order Order
-	for ; err != io.EOF; orders = append(orders, order) {
-		err = decoder.Decode(&order)
-		if err != nil && err != io.EOF {
-			fmt.Println("Error: %v! File 'orders.json' can't be read!\n", err)
-			os.Exit(1)
+	return ords
+}
+
+//GetNewItem returns empty object of Order structure
+func (ords *Orders) GetNewItem() Item {
+	return Order{}
+}
+
+//GetItem returns requsted by id object from allOrds slice
+func (ords Orders) GetItem(id int) Item {
+	return ords[id]
+}
+
+//GetName returns string "order"
+func (ords *Orders) GetName() string {
+	return "order"
+}
+
+//Ask returns map with string keys and interface values, where values pass to fmt.Fscanf function and keys are questions which print for user.
+func (ords *Orders) Ask(i Item) map[string]interface{} {
+	o := i.(Order)
+	questions := map[string]interface{}{
+		"Enter customer": &o.Customer,
+		"Enter goods":    &o.Items[o.ItemsAmount-1].Name,
+	}
+	return questions
+}
+
+//Show returns string which contains data of one order.
+func (o Order) Show() string {
+	s := "\r\nCustomer: " + o.Customer + "\r\nItems: "
+	for _, item := range o.Items {
+		s = s + item.Show() + "\r\n____________________________________________\r\n"
+	}
+	s = s + "Bill: " + o.Bill
+	return s
+}
+
+//FindByName returns integer value which equal to requsted by name(unlike others this method parameter means Order.Customer) order id.
+func (ords Orders) FindByName(name string) int {
+	for n, o := range ords {
+		if o.Customer == name {
+			return n
 		}
 	}
-	return orders
+	return -1
 }
-func (orders *OrderSlc) Add() { //Add new record to orders.
-	var new Order
-	fmt.Println("Order adding.\n\n")
-	fmt.Println("Choose customer:\n")
-	for arrayID, client := range allClients {
-		fmt.Printf("%d.%s\n", arrayID+1, client.Name)
+
+//Save data to file
+func (ords Orders) Save() {
+	file := OpenFile("orders.json")
+	encoder := json.NewEncoder(file)
+	err := encoder.Encode(ords)
+	if err != nil {
+		fmt.Printf("Error: %v! File 'orders.json' can't be written!\r\n", err)
 	}
-	ID := scan(len(allClients))
-	new.Customer = allClients[ID-1].Name
-	choice := 1
-	for choice != 2 {
-		fmt.Println("Choose goods:\n")
-		for arrayID, good := range allGoods {
-			fmt.Printf("%d.%s %d$ %dpc\n", arrayID+1, good.Name, good.Price, good.Amount)
+	file.Close()
+}
+
+//Append required Item to allOrds
+func (ords *Orders) Append(i Item) {
+	o := i.(Order)
+	for _, g := range allPrds {
+		if g.Name == o.Items[o.ItemsAmount-1].Name {
+			o.Items[o.ItemsAmount-1] = g
+			o.ItemsAmount++
 		}
-		ID := scan(len(allGoods))
-		new.Items = append(new.Items, allGoods[ID-1])
-		fmt.Println("Woud you like to add another one good?\n1.Yes.\n2.No")
-		fmt.Scanf("%d", &choice)
-		fflushStdin()
 	}
-	for _, item := range new.Items {
-		new.Bill = new.Bill + item.Price
+	for _, item := range o.Items {
+		o.Bill = o.Bill + item.Price
 	}
-	new.Date = time.Now()
-	fmt.Println("Adding succesfully.\n")
+	*ords = append(*ords, o)
 }
-func (orders *OrderSlc) Edit()     {}
-func (orders *OrderSlc) Delete() { //Delete record from slice, Remove() method is used there.
-	fmt.Println("Order deleting.\n\n")
-	fmt.Println("Please choose required order:\n")
-	for arrayID, order := range *orders {
-		fmt.Printf("%d.Customer: %s, Bill: %d$, Date: %v\n", arrayID+1, order.Customer, order.Bill, order.Date)
-	}
-	ID := scan(len(*orders))
-	orders.Remove(ID - 1)
-	fmt.Println("Order has been deleted")
-	bufio.NewReader(os.Stdin).ReadBytes('\n') //This string was added because I need pause in the end of the method.
-}
-func (orders OrderSlc) Show() { //Show list of order.
-	fmt.Println("List of Orders.\nn")
-	for arrayID, order := range orders {
-		fmt.Printf("%d.Customer: %s, Bill: %d$, Date: %v\n", arrayID+1, order.Customer, order.Bill, order.Date)
-		fmt.Println("Items:\n")
-		for arrayID, item := range order.Items {
-			fmt.Printf("%d.%s %d$ %dpc good number: %d\n", arrayID+1, item.Name, item.Price, item.Amount, item.Number)
+
+//Edit required Item and replaces the old value to the new
+func (ords Orders) Edit(id int, i Item) {
+	o := i.(Order)
+	for _, g := range allPrds {
+		if g.Name == o.Items[o.ItemsAmount-1].Name {
+			o.Items[o.ItemsAmount-1] = g
+			o.ItemsAmount++
 		}
-		fmt.Println("n\n")
 	}
-	fmt.Printf("There are %d records in table.\n", len(orders))
-	bufio.NewReader(os.Stdin).ReadBytes('\n') //This string was added because I need pause in the end of the method.
+	for _, item := range o.Items {
+		o.Bill = o.Bill + item.Price
+	}
+	ords[id] = o
+}
+
+//Remove required object from slice
+func (ords *Orders) Remove(id int) {
+	slice := *ords
+	slice = append(slice[:id], slice[id+1:]...)
+	*ords = slice
+}
+
+//List returns string which contains data of allOrds slice.
+func (ords Orders) List() string {
+	s := "List of Orders.\r\n\r\n"
+	for _, o := range ords {
+		s = s + o.Show() + "____________________________________________\r\n"
+	}
+	return s
 }

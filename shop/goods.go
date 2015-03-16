@@ -1,176 +1,121 @@
-// Goods
+// Products
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 )
 
-type Good struct { //Good structure.
+//Product structure
+type Product struct {
 	Name   string
-	Number int
-	Price  int
-	Amount int
+	Number string
+	Price  string
+	Amount string
 }
-type GoodSlc []Good
 
-var allGoods GoodSlc
+//Products variable is the slice of Product structures
+type Products []Product
+
+var allPrds Products
 
 func init() {
-	allGoods = initializeGoods()
-}
-func (goods *GoodSlc) Remove(item int) { //This method removes record from goods slice.
-	slice := *goods
-	slice = append(slice[:item], slice[item+1:]...)
-	*goods = slice
+	allPrds = initPrd()
 }
 
-func (goods GoodSlc) Save() { //Save data in file(Only for goods)
-	file, err := os.OpenFile("goods.json", os.O_RDWR|os.O_CREATE, 0666) //I don't use O_APPEND, because if i use it i have many copies of data, because i haven't any uniqunes check.
-	if err != nil {
-		fmt.Println("Error: %v! File 'goods.json' can't be opened!\n", err)
-	}
-	defer file.Close()
-	encoder := json.NewEncoder(file)
-	for _, good := range goods {
-		err = encoder.Encode(good)
-		if err != nil {
-			fmt.Println("Error: %v! File 'goods.json' can't be written!\n", err)
-		}
-	}
-}
-
-func initializeGoods() GoodSlc { //I think, i must don't repeat myself, so it works like initializeOrders() or initializeClients().
-	var goods GoodSlc
-	file, err := os.OpenFile("goods.json", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println("Error: %v! File 'goods.json' can't be opened!\n", err)
+//Read from file into the allPrds slice
+func initPrd() Products {
+	var prd Products
+	file := OpenFile("products.json")
+	decoder := json.NewDecoder(file)
+	err := decoder.Decode(&prd)
+	if err != nil && err != io.EOF {
+		fmt.Printf("Error: %v! File 'products.json' can't be read!\r\n", err)
 		os.Exit(1)
 	}
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	var good Good
-	for ; err != io.EOF; goods = append(goods, good) {
-		err = decoder.Decode(&good)
-		if err != nil && err != io.EOF {
-			fmt.Println("Error: %v! File 'goods.json' can't be read!\n", err)
-			os.Exit(1)
+	return prd
+}
+
+//GetNewItem returns empty object of Product structure
+func (prd *Products) GetNewItem() Item {
+	return Product{}
+}
+
+//GetItem returns requsted by id object from allPrds slice
+func (prd Products) GetItem(id int) Item {
+	return prd[id]
+}
+
+//GetName returns string "product"
+func (prd *Products) GetName() string {
+	return "product"
+}
+
+//Ask returns map with string keys and interface values, where values pass to fmt.Fscanf function and keys are questions which print for user.
+func (prd *Products) Ask(i Item) map[string]interface{} {
+	p := i.(Product)
+	questions := map[string]interface{}{
+		"Enter name:":   &p.Name,
+		"Enter price":   &p.Price,
+		"Enter amount:": &p.Amount,
+		"Enter number":  &p.Number,
+	}
+	return questions
+}
+
+//Show returns string which contains data of one product.
+func (p Product) Show() string {
+	s := "\r\nName: " + p.Name + "\r\nNumber: " + p.Number + "\r\nPrice: " + p.Price + "\r\nAmount: " + p.Amount
+	return s
+}
+
+//FindByName returns integer value which equal to requsted by name product id.
+func (prd Products) FindByName(name string) int {
+	for n, p := range prd {
+		if p.Name == name {
+			return n
 		}
 	}
-	return goods
+	return -1
 }
-func (goods *GoodSlc) Add() { //Method for adding data to goods slice.
-	stdin := bufio.NewReader(os.Stdin)
-	var new Good
-	fmt.Println("Good adding.\n\n")
-	fmt.Println("Enter name:")
-	fmt.Scanf("%s", &new.Name)
-	stdin.ReadString('\n')
-	fmt.Println("Enter number:")
-	fmt.Scanf("%d", &new.Number)
-	stdin.ReadString('\n')
-	fmt.Println("Enter price:")
-	fmt.Scanf("%d", &new.Price)
-	stdin.ReadString('\n')
-	fmt.Println("Enter amount:")
-	fmt.Scanf("%d", &new.Amount)
-	stdin.ReadString('\n')
-	*goods = append(*goods, new)
-	fmt.Println("Adding succesfully.\n")
+
+//Save data to file
+func (prd Products) Save() {
+	file := OpenFile("products.json")
+	encoder := json.NewEncoder(file)
+	err := encoder.Encode(prd)
+	if err != nil {
+		fmt.Printf("Error: %v! File 'products.json' can't be written!\r\n", err)
+	}
+	file.Close()
 }
-func (goods GoodSlc) Edit() { //Method for editing data.
-	var name string
-	fmt.Println("Good editting.\n\n")
-	fmt.Println("Please select required good by name:")
-	fmt.Scanf("%s", &name)
-	fflushStdin()
-	for _, good := range goods {
-		if good.Name == name {
-			fmt.Println("1.Name: ", good.Name, "\n")
-			fmt.Println("2.Number:", good.Number, "\n")
-			fmt.Println("3.Price:", good.Price, "\n")
-			fmt.Println("4.Amount:", good.Amount, "\n")
-			fmt.Println("5.Return to main menu.    \n\n")
-			choice := scan(5)
-			switch choice {
-			case 1:
-				fmt.Println("Enter name:")
-				fmt.Scanf("%s", &good.Name)
-				break
-			case 2:
-				fmt.Println("Enter number:")
-				fmt.Scanf("%s", &good.Number)
-				break
-			case 3:
-				fmt.Println("Enter price:")
-				fmt.Scanf("%s", &good.Price)
-				break
-			case 4:
-				fmt.Println("Enter amount:")
-				fmt.Scanf("%s", &good.Amount)
-				break
-			case 5:
-				return
-			}
-			fflushStdin()
-			fmt.Printf("Good number %d has been eddited.", good.Number)
-			break
-		}
-	}
-	fmt.Println("No such good!\n1.Try again.\n2.Return to main menu.")
-	choice := scan(2)
-	switch choice {
-	case 1:
-		goods.Edit()
-		break
-	case 2:
-		return
-	}
+
+//Append required Item to allPrds
+func (prd *Products) Append(i Item) {
+	p := i.(Product)
+	*prd = append(*prd, p)
 }
-func (goods *GoodSlc) Delete() { //Method for deleting data.
-	var name string
-	fmt.Println("Good deleting.\n\n")
-	fmt.Println("Please select required good by name:")
-	fmt.Scanf("%s", &name)
-	fflushStdin()
-	for arrayID, good := range *goods {
-		if good.Name == name {
-			goods.Remove(arrayID)
-			fmt.Println("Good has been deleted!")
-			bufio.NewReader(os.Stdin).ReadBytes('\n')
-			return
-		}
-	}
-	fmt.Println("No such good!\n1.Try again.\n2.Return to main menu.")
-	choice := scan(2)
-	switch choice {
-	case 1:
-		goods.Delete()
-		break
-	case 2:
-		return
-	}
+
+//Edit required Item and replaces the old value to the new
+func (prd Products) Edit(id int, i Item) {
+	p := i.(Product)
+	prd[id] = p
 }
-func (goods GoodSlc) Show() { //Method for showing data.
-	fmt.Println("List of Goods.\n\n")
-	fmt.Println("____________________________________________\n")
-	for arrayID, good := range goods {
-		fmt.Println("ID:", arrayID, "\n")
-		fmt.Println("Name: ", good.Name, "\n")
-		fmt.Println("Number:", good.Number, "\n")
-		fmt.Println("Price:", good.Price, "\n")
-		fmt.Println("Amount:", good.Amount, "\n")
-		fmt.Println("Availability:")
-		if good.Amount != 0 {
-			fmt.Println("available")
-		} else {
-			fmt.Println("unavailable")
-		}
-		fmt.Println("____________________________________________n")
+
+//Remove required object from slice
+func (prd *Products) Remove(id int) {
+	slice := *prd
+	slice = append(slice[:id], slice[id+1:]...)
+	*prd = slice
+}
+
+//List returns string which contains data of allPrds slice
+func (prd Products) List() string {
+	s := "List of Products.\r\n\r\n"
+	for _, p := range prd {
+		s = s + p.Show() + "\r\n____________________________________________\r\n"
 	}
-	fmt.Printf("There are %d records in table.\n", len(goods))
-	bufio.NewReader(os.Stdin).ReadBytes('\n') //Pause. See explain in Orders.Go
+	return s
 }
