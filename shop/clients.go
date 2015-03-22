@@ -93,6 +93,10 @@ func (cls Clients) FindByName(name string) int {
 	}
 	return -1
 }
+func (cls Clients) FindByID(id int64) *Client {
+	cl := allCls[id]
+	return &cl
+}
 
 //Save data to file
 func (cls Clients) Save() {

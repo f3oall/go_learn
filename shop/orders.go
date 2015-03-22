@@ -83,6 +83,10 @@ func (ords Orders) FindByName(name string) int {
 	}
 	return -1
 }
+func (ords Orders) FindByID(id int64) *Order {
+	o := allOrds[id]
+	return &o
+}
 
 //Save data to file
 func (ords Orders) Save() {

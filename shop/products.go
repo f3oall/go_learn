@@ -81,6 +81,10 @@ func (prds Products) FindByName(name string) int {
 	}
 	return -1
 }
+func (prds Products) FindByID(id int64) *Product {
+	prd := allPrds[id]
+	return &prd
+}
 
 //Save data to file
 func (prds Products) Save() {
