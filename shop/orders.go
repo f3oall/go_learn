@@ -10,10 +10,11 @@ import (
 
 //Order structure
 type Order struct {
-	Customer    string
-	Items       Products
-	Bill        string
-	ItemsAmount int
+	ID          int      `json:"id"`
+	Customer    string   `json:"customer"`
+	Items       Products `json:"items:"`
+	Bill        string   `json:"bill"`
+	ItemsAmount int      `json:"items_amount"`
 }
 
 //Orders variable is the slice of Order structures
@@ -97,6 +98,7 @@ func (ords Orders) Save() {
 //Append required Item to allOrds
 func (ords *Orders) Append(i Item) {
 	o := i.(Order)
+	o.ID = len(*ords)
 	for _, g := range allPrds {
 		if g.Name == o.Items[o.ItemsAmount-1].Name {
 			o.Items[o.ItemsAmount-1] = g
@@ -112,6 +114,7 @@ func (ords *Orders) Append(i Item) {
 //Edit required Item and replaces the old value to the new
 func (ords Orders) Edit(id int, i Item) {
 	o := i.(Order)
+	o.ID = id
 	for _, g := range allPrds {
 		if g.Name == o.Items[o.ItemsAmount-1].Name {
 			o.Items[o.ItemsAmount-1] = g
@@ -138,4 +141,14 @@ func (ords Orders) List() string {
 		s = s + o.Show() + "____________________________________________\r\n"
 	}
 	return s
+}
+
+//Decode s...
+func (ords *Orders) Decode(r io.Reader) (Item, error) {
+	var o Order
+	err := json.NewDecoder(r).Decode(&o)
+	if err != nil {
+		return Order{}, err
+	}
+	return o, nil
 }

@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"net"
-	"os"
+	"io"
+	"log"
+	"net/http"
 )
 
 //Data is an interface for Products, Clients and Orders types.
@@ -19,6 +18,7 @@ type Data interface {
 	GetItem(id int) Item
 	Ask(i Item) map[string]interface{}
 	FindByName(name string) int
+	Decode(r io.Reader) (Item, error)
 }
 
 //Item is an interface for Product,Client and Order structures
@@ -26,6 +26,7 @@ type Item interface {
 	Show() string
 }
 
+/*
 //Add function provides communication with user in case when he wants to create new record.
 func Add(d Data, conn net.Conn, bufc *bufio.Reader) {
 	fmt.Fprintf(conn, "Add %s.\r\n\r\n", d.GetName())
@@ -106,45 +107,9 @@ func Menu(d Data, conn net.Conn, bufc *bufio.Reader) {
 		}
 	}
 }
-
-//handleConnection function is a start menu.
-func handleConnection(conn net.Conn) {
-	bufc := bufio.NewReader(conn)
-	defer conn.Close()
-	for {
-		var d Data
-		clearConsole()
-		fmt.Fprintf(conn, "1.Clients.\r\n")
-		fmt.Fprintf(conn, "2.Products.\r\n")
-		fmt.Fprintf(conn, "3.Orders.\r\n")
-		fmt.Fprintf(conn, "4.Exit.\r\n")
-		choice := scan(4, conn, bufc)
-		switch choice {
-		case 1:
-			d = &allCls
-		case 2:
-			d = &allPrds
-		case 3:
-			d = &allOrds
-		case 4:
-			return
-		}
-		Menu(d, conn, bufc)
-	}
-}
+*/
 
 func main() {
-	ln, err := net.Listen("tcp", ":10000")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		go handleConnection(conn)
-	}
+	r := NewRouter()
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

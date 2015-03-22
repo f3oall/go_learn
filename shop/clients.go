@@ -9,16 +9,17 @@ import (
 
 //Client structure
 type Client struct {
-	Name         string
-	Surname      string
-	Login        string
-	Password     string
-	CreditCard   string
-	Street       string
-	City         string
-	State        string
-	Zip          string
-	OrdersAmount int
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Surname      string `json:"surname"`
+	Login        string `json:"login"`
+	Password     string `json:"password"`
+	CreditCard   string `json:"credit_card"`
+	Street       string `json:"street"`
+	City         string `json:"city"`
+	State        string `json:"state"`
+	Zip          string `json:"zip"`
+	OrdersAmount int    `json:"orders_amount"`
 }
 
 //Clients variable is a slice of Client structures
@@ -107,12 +108,14 @@ func (cls Clients) Save() {
 //Append required Item to allCls
 func (cls *Clients) Append(i Item) {
 	c := i.(Client)
+	c.ID = len(*cls)
 	*cls = append(*cls, c)
 }
 
 //Edit required Item and replaces the old value to the new
 func (cls Clients) Edit(id int, i Item) {
 	c := i.(Client)
+	c.ID = id
 	cls[id] = c
 }
 
@@ -130,4 +133,14 @@ func (cls Clients) List() string {
 		s = s + c.Show() + "____________________________________________\r\n"
 	}
 	return s
+}
+
+//Decode s...
+func (cls *Clients) Decode(r io.Reader) (Item, error) {
+	var c Client
+	err := json.NewDecoder(r).Decode(&c)
+	if err != nil {
+		return Client{}, err
+	}
+	return c, nil
 }
