@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 )
 
 //Product structure
@@ -15,10 +16,14 @@ type Product struct {
 	Number string `json:"number"`
 	Price  string `json:"price"`
 	Amount string `json:"amount"`
+	sync.Mutex
 }
 
 //Products variable is the slice of Product structures
-type Products []Product
+type Products struct {
+	Prds []Product
+	sync.Mutex
+}
 
 var allPrds Products
 
@@ -31,7 +36,7 @@ func initPrd() Products {
 	var prds Products
 	file := OpenFile("products.json")
 	decoder := json.NewDecoder(file)
-	err := decoder.Decode(&prds)
+	err := decoder.Decode(&prds.Prds)
 	if err != nil && err != io.EOF {
 		fmt.Printf("Error: %v! File 'products.json' can't be read!\r\n", err)
 		os.Exit(1)
@@ -46,7 +51,7 @@ func (prds *Products) GetNewItem() Item {
 
 //GetItem returns requsted by id object from allPrds slice
 func (prds Products) GetItem(id int) Item {
-	return prds[id]
+	return prds.Prds[id]
 }
 
 //GetName returns string "product"
@@ -56,6 +61,7 @@ func (prds *Products) GetName() string {
 
 //Ask returns map with string keys and interface values, where values pass to fmt.Fscanf function and keys are questions which print for user.
 func (prds *Products) Ask(i Item) map[string]interface{} {
+	prds.Lock()
 	p := i.(Product)
 	questions := map[string]interface{}{
 		"Enter name:":   &p.Name,
@@ -63,18 +69,21 @@ func (prds *Products) Ask(i Item) map[string]interface{} {
 		"Enter amount:": &p.Amount,
 		"Enter number":  &p.Number,
 	}
+	prds.Unlock()
 	return questions
 }
 
 //Show returns string which contains data of one product.
 func (p Product) Show() string {
+	p.Lock()
 	s := "\r\nName: " + p.Name + "\r\nNumber: " + p.Number + "\r\nPrice: " + p.Price + "\r\nAmount: " + p.Amount
+	p.Unlock()
 	return s
 }
 
 //FindByName returns integer value which equal to requsted by name product id.
 func (prds Products) FindByName(name string) int {
-	for n, p := range prds {
+	for n, p := range prds.Prds {
 		if p.Name == name {
 			return n
 		}
@@ -82,7 +91,7 @@ func (prds Products) FindByName(name string) int {
 	return -1
 }
 func (prds Products) FindByID(id int64) *Product {
-	prd := allPrds[id]
+	prd := allPrds.Prds[id]
 	return &prd
 }
 
@@ -90,7 +99,7 @@ func (prds Products) FindByID(id int64) *Product {
 func (prds Products) Save() {
 	file := OpenFile("products.json")
 	encoder := json.NewEncoder(file)
-	err := encoder.Encode(prds)
+	err := encoder.Encode(prds.Prds)
 	if err != nil {
 		fmt.Printf("Error: %v! File 'products.json' can't be written!\r\n", err)
 	}
@@ -99,31 +108,39 @@ func (prds Products) Save() {
 
 //Append required Item to allPrds
 func (prds *Products) Append(i Item) {
+	prds.Lock()
 	p := i.(Product)
-	p.ID = len(*prds)
-	*prds = append(*prds, p)
+	p.ID = len(prds.Prds)
+	prds.Prds = append(prds.Prds, p)
+	prds.Unlock()
 }
 
 //Edit required Item and replaces the old value to the new
 func (prds Products) Edit(id int, i Item) {
+	prds.Lock()
 	p := i.(Product)
 	p.ID = id
-	prds[id] = p
+	prds.Prds[id] = p
+	prds.Unlock()
 }
 
 //Remove required object from slice
 func (prds *Products) Remove(id int) {
-	slice := *prds
+	prds.Lock()
+	slice := prds.Prds
 	slice = append(slice[:id], slice[id+1:]...)
-	*prds = slice
+	prds.Prds = slice
+	prds.Unlock()
 }
 
 //List returns string which contains data of allPrds slice
 func (prds Products) List() string {
+	prds.Lock()
 	s := "List of Products.\r\n\r\n"
-	for _, p := range prds {
+	for _, p := range prds.Prds {
 		s = s + p.Show() + "\r\n____________________________________________\r\n"
 	}
+	prds.Unlock()
 	return s
 }
 

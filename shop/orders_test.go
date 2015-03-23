@@ -3,17 +3,17 @@ package main
 import "testing"
 
 func ExmplOrder(t *testing.T) Order {
-	order := Order{Customer: "Test", Items: Products{Product{Name: "Test"}}, Bill: "1", ItemsAmount: 1}
+	order := Order{Customer: "Test", Items: []Product{Product{Name: "Test"}}, Bill: "1", ItemsAmount: 1}
 	return order
 }
 func ExmplOrder1(t *testing.T) Order {
-	order := Order{Customer: "Test1", Items: Products{Product{Name: "Test1"}}, Bill: "2", ItemsAmount: 2}
+	order := Order{Customer: "Test1", Items: []Product{Product{Name: "Test1"}}, Bill: "2", ItemsAmount: 2}
 	return order
 }
 func ExmplOrders(t *testing.T) Orders {
 	var ords Orders
-	ords = append(ords, ExmplOrder(t))
-	ords = append(ords, ExmplOrder1(t))
+	ords.Ords = append(ords.Ords, ExmplOrder(t))
+	ords.Ords = append(ords.Ords, ExmplOrder1(t))
 	return ords
 }
 
@@ -24,7 +24,7 @@ func (ords Orders) TGetNewItem(t *testing.T) {
 
 func (ords Orders) TGetItem(t *testing.T) {
 	o := ords.GetItem(0)
-	assertEqual(t, ords[0].Customer, o.(Order).Customer)
+	assertEqual(t, ords.Ords[0].Customer, o.(Order).Customer)
 }
 
 func (ords Orders) TGetName(t *testing.T) {
@@ -42,20 +42,20 @@ func (ords Orders) TFindByName(t *testing.T) {
 func (ords Orders) TAppend(t *testing.T) {
 	i := ords.GetNewItem()
 	ords.Append(i)
-	assertEqual(t, ords[2].Customer, "")
+	assertEqual(t, ords.Ords[2].Customer, "")
 }
 
 func (ords Orders) TEdit(t *testing.T) {
 	i := ords.GetItem(1)
 	ords.Edit(0, i)
-	assertEqual(t, ords[0].Customer, ords[1].Customer)
+	assertEqual(t, ords.Ords[0].Customer, ords.Ords[1].Customer)
 }
 
 func (ords Orders) TRemove(t *testing.T) {
 	ords.Remove(1)
 	i := ords.GetItem(0)
 	ords.Append(i)
-	assertEqual(t, ords[0].Customer, ords[1].Customer)
+	assertEqual(t, ords.Ords[0].Customer, ords.Ords[1].Customer)
 }
 func TestOrders(t *testing.T) {
 	ords := ExmplOrders(t)

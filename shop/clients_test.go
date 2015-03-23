@@ -12,8 +12,8 @@ func ExmplClient1(t *testing.T) Client {
 }
 func ExmplClients(t *testing.T) Clients {
 	var cls Clients
-	cls = append(cls, ExmplClient(t))
-	cls = append(cls, ExmplClient1(t))
+	cls.Cls = append(cls.Cls, ExmplClient(t))
+	cls.Cls = append(cls.Cls, ExmplClient1(t))
 	return cls
 }
 
@@ -24,7 +24,7 @@ func (cls Clients) TGetNewItem(t *testing.T) {
 
 func (cls Clients) TGetItem(t *testing.T) {
 	c := cls.GetItem(0)
-	assertEqual(t, cls[0].Name, c.(Client).Name)
+	assertEqual(t, cls.Cls[0].Name, c.(Client).Name)
 }
 
 func (cls Clients) TGetName(t *testing.T) {
@@ -42,20 +42,20 @@ func (cls Clients) TFindByName(t *testing.T) {
 func (cls Clients) TAppend(t *testing.T) {
 	i := cls.GetNewItem()
 	cls.Append(i)
-	assertEqual(t, cls[2].Name, "")
+	assertEqual(t, cls.Cls[2].Name, "")
 }
 
 func (cls Clients) TEdit(t *testing.T) {
 	i := cls.GetItem(1)
 	cls.Edit(0, i)
-	assertEqual(t, cls[0].Name, cls[1].Name)
+	assertEqual(t, cls.Cls[0].Name, cls.Cls[1].Name)
 }
 
 func (cls Clients) TRemove(t *testing.T) {
 	cls.Remove(1)
 	i := cls.GetItem(0)
 	cls.Append(i)
-	assertEqual(t, cls[0].Name, cls[1].Name)
+	assertEqual(t, cls.Cls[0].Name, cls.Cls[1].Name)
 }
 func TestClients(t *testing.T) {
 	cls := ExmplClients(t)
